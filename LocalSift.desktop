@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=LocalSift
+Comment=Local file analysis (RAG)
+Exec=xfce4-terminal -e "bash -c 'cd \"$(dirname \"%k\")\" && bash start_localsift.sh; exec bash'"
+Icon=emblem-system
+Terminal=false
+StartupNotify=true
+Categories=Office;Utility;

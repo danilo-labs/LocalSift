@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LocalSift</title>
+<style>
+    /* ========== DARK THEME — minimal, blue/gray, system fonts ========== */
+    :root {
+        --bg: #0b1220;          /* page background */
+        --panel: #101a2e;       /* panels */
+        --panel-2: #0d1526;     /* inner surfaces */
+        --line: #1e2a44;        /* borders */
+        --line-strong: #2a3a5c;
+        --ink: #e2e8f0;         /* primary text */
+        --muted: #7c8ba1;       /* secondary text */
+        --accent: #3b82f6;      /* action blue */
+        --accent-hover: #2f6fe0;
+        --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PT Sans", Roboto, "DejaVu Sans", "Noto Sans", sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: var(--font);
+        background: var(--bg);
+        color: var(--ink);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    /* ========== HEADER ========== */
+    .topbar {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        padding: 14px 22px;
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+        flex-shrink: 0;
+    }
+    .brand {
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+    }
+    .brand .logo-mark { color: var(--accent); margin-right: 6px; }
+    .tagline { font-size: 12.5px; color: var(--muted); }
+
+    /* ========== TWO-COLUMN LAYOUT ========== */
+    .layout {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 18px;
+        padding: 18px 22px;
+        overflow: hidden;
+        min-height: 0;
+    }
+    @media (max-width: 900px) {
+        .layout { grid-template-columns: 1fr; overflow-y: auto; }
+    }
+
+    /* ========== LEFT COLUMN — DRAG & DROP ========== */
+    .left-col {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-height: 0;
+    }
+    .col-title {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+    .dropzone {
+        border: 2px dashed var(--line-strong);
+        border-radius: 14px;
+        background: var(--panel-2);
+        padding: 44px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color .15s, background .15s;
+    }
+    .dropzone:hover { border-color: var(--accent); background: #101c36; }
+    .dz-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: var(--accent);
+    }
+    .dz-title { font-size: 14px; font-weight: 600; }
+    .dz-hint { font-size: 12px; color: var(--muted); }
+
+    /* loaded file list (empty for now) */
+    .file-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        overflow-y: auto;
+        min-height: 0;
+        flex: 1;
+    }
+    .file-list .empty {
+        font-size: 12.5px;
+        color: var(--muted);
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--panel-2);
+    }
+
+    /* ========== RIGHT COLUMN — CHAT ========== */
+    .right-col {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 0;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px;
+    }
+    .chat {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 0;
+    }
+    .empty-chat {
+        margin: auto;
+        text-align: center;
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .empty-chat .title { font-size: 15px; font-weight: 600; color: var(--ink); }
+    .empty-chat .sub { font-size: 12.5px; }
+
+    /* messages (structure ready for future logic) */
+    .msg {
+        max-width: 82%;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 14px;
+        line-height: 1.55;
+    }
+    .msg.user {
+        align-self: flex-end;
+        background: var(--accent);
+        color: #fff;
+        border-bottom-right-radius: 4px;
+    }
+    .msg.assistant {
+        align-self: flex-start;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        border-bottom-left-radius: 4px;
+    }
+
+    /* ========== INPUT BAR — BOTTOM RIGHT ========== */
+    .input-bar {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+    .input-bar textarea {
+        flex: 1;
+        resize: none;
+        font-family: inherit;
+        font-size: 14px;
+        color: var(--ink);
+        background: var(--panel-2);
+        border: 1px solid var(--line-strong);
+        border-radius: 12px;
+        padding: 11px 14px;
+        outline: none;
+        transition: border-color .15s;
+        min-height: 46px;
+        max-height: 140px;
+    }
+    .input-bar textarea:focus { border-color: var(--accent); }
+    .input-bar textarea::placeholder { color: var(--muted); }
+    .input-bar button {
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        color: #fff;
+        background: var(--accent);
+        border: none;
+        border-radius: 12px;
+        padding: 12px 22px;
+        cursor: pointer;
+        transition: background .15s;
+        flex-shrink: 0;
+    }
+    .input-bar button:hover { background: var(--accent-hover); }
+    .input-bar button:active { transform: translateY(1px); }
+
+    /* ========== HEADER CONTROLS (model settings) ========== */
+    .topbar { justify-content: space-between; }
+    .topbar-left { display: flex; align-items: baseline; gap: 12px; }
+    .header-controls { display: flex; gap: 8px; align-items: center; }
+    .hdr-icon {
+        font-size: 15px; cursor: pointer;
+        width: 34px; height: 34px; border-radius: 10px;
+        border: 1px solid var(--line);
+        background: var(--panel-2); color: var(--ink);
+        display: inline-flex; align-items: center; justify-content: center;
+    }
+    .hdr-icon:hover { border-color: var(--accent); }
+
+    /* ========== UPLOAD STATES & FILE LIST ========== */
+    .dropzone.drag { border-color: var(--accent); background: #101c36; }
+    .file-item {
+        display: flex; justify-content: space-between; gap: 8px; align-items: center;
+        font-size: 12.5px; padding: 9px 12px;
+        border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2);
+    }
+    .file-item .fi-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-item .fi-meta { color: var(--muted); flex-shrink: 0; }
+    .status { font-size: 11.5px; color: var(--muted); min-height: 15px; }
+    .typing-cursor { display: inline-block; animation: blink 1s step-start infinite; opacity: .6; }
+    @keyframes blink { 50% { opacity: 0; } }
+</style>
+</head>
+<body>
+
+    <header class="topbar">
+        <div class="topbar-left">
+            <div class="brand"><span class="logo-mark">⌖</span>LocalSift</div>
+            <span class="tagline">local file analysis</span>
+        </div>
+        <div class="header-controls">
+            <button class="hdr-icon" id="settings-btn" title="Model settings">⚙️</button>
+        </div>
+    </header>
+
+    <main class="layout">
+
+        <!-- ===== LEFT COLUMN: DRAG & DROP ===== -->
+        <section class="left-col">
+            <div class="col-title">Files</div>
+            <div class="dropzone" id="dropzone">
+                <div class="dz-icon">⇪</div>
+                <p class="dz-title">Drag &amp; drop your files here</p>
+                <p class="dz-hint">PDF, TXT, MD, CSV, ODT, DOCX</p>
+            </div>
+            <input type="file" id="file-input" hidden accept=".txt,.md,.csv,.odt,.docx,.pdf">
+            <ul class="file-list" id="file-list">
+                <li class="empty">No files loaded</li>
+            </ul>
+            <div class="status" id="status"></div>
+        </section>
+
+        <!-- ===== RIGHT COLUMN: CHAT ===== -->
+        <section class="right-col">
+            <div class="chat" id="chat">
+                <div class="empty-chat">
+                    <div class="title">LocalSift is ready</div>
+                    <div class="sub">Drop files on the left, then ask your question below.</div>
+                </div>
+                <!-- messages (.msg.user / .msg.assistant) will appear here -->
+            </div>
+            <div class="input-bar">
+                <textarea id="prompt" rows="1" placeholder="Ask something about your files…"></textarea>
+                <button id="sift-btn" type="button">Sift</button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // ===================== STATE =====================
+        const documents = [];   // [{ name, text, paragraphs }]
+        const DEFAULT_MODEL = 'qwen2.5:1.5b';
+        let BACKEND = { type: 'koboldcpp', url: 'http://localhost:5001/v1/chat/completions' };
+
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('file-input');
+        const fileListEl = document.getElementById('file-list');
+        const statusEl = document.getElementById('status');
+        const chatEl = document.getElementById('chat');
+        const promptEl = document.getElementById('prompt');
+        const siftBtn = document.getElementById('sift-btn');
+
+        function setStatus(text) { statusEl.textContent = text || ''; }
+        function getModelName() { return localStorage.getItem('localsift_model') || DEFAULT_MODEL; }
+
+        // ===================== CHAT RENDERING =====================
+        function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+        function removeEmptyState() { const el = chatEl.querySelector('.empty-chat'); if (el) el.remove(); }
+        function appendMessage(role, content) {
+            const el = document.createElement('div');
+            el.className = `msg ${role}`;
+            el.innerHTML = escapeHtml(content);
+            removeEmptyState();
+            chatEl.appendChild(el);
+            chatEl.scrollTop = chatEl.scrollHeight;
+            return el;
+        }
+
+        // ===================== UPLOAD =====================
+        function splitParagraphs(text) {
+            return text.split(/\n{2,}/).map(p => p.replace(/\s+/g, ' ').trim()).filter(Boolean);
+        }
+
+        async function uploadFile(file) {
+            setStatus(`Extracting text from ${file.name}…`);
+            try {
+                const fd = new FormData();
+                fd.append('file', file);
+                const res = await fetch('/upload', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (!data.ok) { appendMessage('assistant', `⚠️ ${file.name}: ${data.error}`); setStatus(''); return; }
+                documents.push({ name: data.filename, text: data.text, paragraphs: splitParagraphs(data.text) });
+                renderFileList();
+                console.log(`[upload] ${data.filename}: ${data.chars} chars extracted`);
+                setStatus(`${data.filename}: ${data.chars} chars ready`);
+            } catch (err) {
+                console.error('[upload] failed:', err);
+                appendMessage('assistant', '⚠️ Could not reach the LocalSift server. Is start_localsift.sh running?');
+                setStatus('');
+            }
+        }
+
+        function renderFileList() {
+            if (!documents.length) { fileListEl.innerHTML = '<li class="empty">No files loaded</li>'; return; }
+            fileListEl.innerHTML = '';
+            for (const doc of documents) {
+                const li = document.createElement('li');
+                li.className = 'file-item';
+                li.innerHTML = `<span class="fi-name">${escapeHtml(doc.name)}</span><span class="fi-meta">${doc.paragraphs.length} ¶</span>`;
+                fileListEl.appendChild(li);
+            }
+        }
+
+        // drag & drop + click-to-browse
+        ['dragenter', 'dragover'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('drag'); }));
+        ['dragleave', 'drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('drag'); }));
+        dropzone.addEventListener('drop', e => { if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]); });
+        dropzone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', () => { if (fileInput.files[0]) uploadFile(fileInput.files[0]); fileInput.value = ''; });
+
+        // ===================== BM25 RANKING =====================
+        const STOPWORDS = new Set(['the', 'a', 'an', 'and', 'or', 'of', 'to', 'in', 'is', 'are', 'was', 'were', 'be', 'been', 'for', 'on', 'with', 'as', 'at', 'by', 'it', 'its', 'this', 'that', 'these', 'those', 'from', 'which', 'not', 'you', 'your', 'we', 'our']);
+        function tokenize(text) {
+            const tokens = text.toLowerCase().match(/[\p{L}\p{N}]+/gu) || [];
+            return tokens.filter(t => t.length > 1 && !STOPWORDS.has(t));
+        }
+        // Classic BM25 (k1 = 1.5, b = 0.75) over the paragraphs of all loaded documents
+        function bm25TopFragments(query, k = 3) {
+            const k1 = 1.5, b = 0.75;
+            const corpus = [];
+            for (const doc of documents) {
+                doc.paragraphs.forEach((text, i) => corpus.push({ doc: doc.name, index: i, text, tokens: tokenize(text) }));
+            }
+            if (!corpus.length) return [];
+            const N = corpus.length;
+            const avgdl = corpus.reduce((sum, c) => sum + c.tokens.length, 0) / N;
+            const df = new Map();
+            for (const c of corpus) for (const t of new Set(c.tokens)) df.set(t, (df.get(t) || 0) + 1);
+            const queryTokens = tokenize(query);
+            for (const c of corpus) {
+                const tf = new Map();
+                for (const t of c.tokens) tf.set(t, (tf.get(t) || 0) + 1);
+                let score = 0;
+                for (const t of queryTokens) {
+                    const f = tf.get(t); if (!f) continue;
+                    const n = df.get(t) || 0;
+                    const idf = Math.log(1 + (N - n + 0.5) / (n + 0.5));
+                    score += idf * (f * (k1 + 1)) / (f + k1 * (1 - b + b * (c.tokens.length / avgdl)));
+                }
+                c.score = score;
+            }
+            return corpus.sort((a, z) => z.score - a.score).slice(0, k);
+        }
+
+        // ===================== RAG PROMPT =====================
+        function buildRagMessages(query) {
+            const fragments = bm25TopFragments(query, 3);
+            const fragmentsText = fragments.length
+                ? fragments.map((f, i) => `[Fragment ${i + 1} — ${f.doc}, paragraph ${f.index + 1}]\n${f.text}`).join('\n\n')
+                : '(no fragments available)';
+            const systemPrompt =
+                'You are an expert document analysis assistant. ' +
+                'You must ALWAYS answer in English, regardless of the language of the provided text. ' +
+                'Answer based EXCLUSIVELY on the provided fragments. ' +
+                "If the answer is not present, respond: 'I could not find this information in the document'. " +
+                'Cite the fragment used.\n\n' +
+                'Fragments: ' + fragmentsText;
+            return { messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: query }], fragments };
+        }
+
+        // ===================== BACKEND DETECT (Ollama / KoboldCpp) =====================
+        async function detectBackend() {
+            try {
+                const res = await fetch('http://127.0.0.1:11434/', { signal: AbortSignal.timeout(1000) });
+                if (res.ok) return { type: 'ollama', url: 'http://127.0.0.1:11434/v1/chat/completions' };
+            } catch (e) {}
+            try {
+                const res = await fetch('http://127.0.0.1:5001/api/extra/version', { signal: AbortSignal.timeout(1000) });
+                if (res.ok) return { type: 'koboldcpp', url: 'http://localhost:5001/v1/chat/completions' };
+            } catch (e) {}
+            return { type: 'none', url: null };
+        }
+
+        // SSE streaming: tokens appear as they are generated
+        async function chatStream(messages, msgDiv) {
+            const payload = { model: getModelName(), messages, stream: true };
+            if (BACKEND.type === 'koboldcpp') { payload.max_tokens = 512; payload.temperature = 0.3; }
+            const response = await fetch(BACKEND.url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let reply = '', buffer = '';
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+                for (const line of lines) {
+                    const s = line.trim();
+                    if (!s.startsWith('data:')) continue;
+                    const item = s.slice(5).trim();
+                    if (!item || item === '[DONE]') continue;
+                    try { const delta = JSON.parse(item).choices?.[0]?.delta?.content; if (delta) reply += delta; } catch (e) { /* incomplete SSE chunk: skip */ }
+                }
+                msgDiv.innerHTML = escapeHtml(reply) + '<span class="typing-cursor">▌</span>';
+                chatEl.scrollTop = chatEl.scrollHeight;
+            }
+            msgDiv.innerHTML = escapeHtml(reply);
+            return reply;
+        }
+
+        // ===================== SEND =====================
+        async function sendQuery() {
+            const query = promptEl.value.trim();
+            if (!query || siftBtn.disabled) return;
+            promptEl.value = '';
+            appendMessage('user', query);
+            if (!documents.length) {
+                appendMessage('assistant', 'Please load a document first: drag a file into the left panel.');
+                return;
+            }
+            const { messages, fragments } = buildRagMessages(query);
+            console.log('[rag] top fragments:', fragments.map(f => `${f.doc} ¶${f.index + 1} (score ${f.score.toFixed(2)})`).join(' | '));
+            siftBtn.disabled = true;
+            setStatus(`Asking ${getModelName()} (${BACKEND.type})…`);
+            const replyDiv = appendMessage('assistant', '');
+            try {
+                if (!BACKEND.url) { const b = await detectBackend(); if (b.url) BACKEND = b; }
+                if (!BACKEND.url) throw new Error('No AI backend found (Ollama on port 11434 or KoboldCpp on port 5001)');
+                await chatStream(messages, replyDiv);
+                setStatus('');
+            } catch (err) {
+                console.error('[chat] failed:', err);
+                replyDiv.innerHTML = escapeHtml(`⚠️ ${err.message}`);
+                setStatus('backend error');
+            } finally {
+                siftBtn.disabled = false;
+                promptEl.focus();
+            }
+        }
+        siftBtn.addEventListener('click', sendQuery);
+        promptEl.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendQuery(); }
+        });
+
+        // ===================== MODEL SETTINGS =====================
+        document.getElementById('settings-btn').addEventListener('click', () => {
+            const name = window.prompt('Model name for the AI backend:\n(Ollama example: qwen2.5:1.5b — any name works for KoboldCpp)', getModelName());
+            if (name !== null) {
+                const clean = name.trim() || DEFAULT_MODEL;
+                localStorage.setItem('localsift_model', clean);
+                alert('Model set to: ' + clean);
+            }
+        });
+
+        // ===================== INIT =====================
+        (async () => {
+            BACKEND = await detectBackend();
+            setStatus(BACKEND.url ? `AI backend: ${BACKEND.type}` : 'No AI backend detected');
+        })();
+    </script>
+
+</body>
+</html>
