@@ -7,7 +7,7 @@
 Ask questions about your documents. Everything runs on your machine — no cloud, no accounts, no data leaving your device.
 
 ![License](https://img.shields.io/badge/license-MIT-blue)
-![Version](https://img.shields.io/badge/version-v1.0.0-8b5cf6)
+![Version](https://img.shields.io/badge/version-v1.1.0-8b5cf6)
 
 ![LocalSift in action](screenshot.png)
 
@@ -20,8 +20,15 @@ Ask questions about your documents. Everything runs on your machine — no cloud
 LocalSift is a minimal RAG (Retrieval-Augmented Generation) assistant:
 
 1. **Drop a document** into the left panel — the text is extracted locally, in memory (files are never written to disk).
-2. **Ask a question** — a rigorous BM25 ranking picks the 3 most relevant fragments of your documents.
+2. **Ask a question** — a rigorous BM25 ranking picks the most relevant fragments of your documents.
 3. **Get a grounded answer** — a local LLM answers exclusively from those fragments, always in English, citing the fragment used. If the answer is not in the documents, it says so instead of inventing one.
+
+**New in v1.1.0 — transparency & control:**
+- **Expandable citations** — every answer carries the exact BM25 fragments it was built from (click `📄 Source:` to inspect them)
+- **Keyword highlighting** — the query terms that triggered the BM25 match are highlighted inside each fragment
+- **Search Only mode (No AI)** — skip the LLM entirely and see the raw BM25 results instantly; ideal for slow PCs and exact-word search
+- **Top-K selector** — choose how many fragments (1–5) are sent to the AI
+- **Stop generation** — a red Stop button interrupts the streaming answer at any time, keeping the partial text
 
 ## 📄 Supported formats
 

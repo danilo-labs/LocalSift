@@ -47,18 +47,34 @@
     .brand .logo-mark { color: var(--accent); margin-right: 6px; }
     .tagline { font-size: 12.5px; color: var(--muted); }
 
-    /* ========== TWO-COLUMN LAYOUT ========== */
+    /* ========== THREE-COLUMN LAYOUT (files / preview / chat) ========== */
     .layout {
         flex: 1;
         display: grid;
-        grid-template-columns: 360px 1fr;
-        gap: 18px;
-        padding: 18px 22px;
+        grid-template-columns: 250px minmax(300px, 1fr) 440px;
+        gap: 16px;
+        padding: 16px 20px;
         overflow: hidden;
         min-height: 0;
     }
-    @media (max-width: 900px) {
+    /* preview hidden: clean two-column layout, the chat takes the space */
+    .layout.no-preview { grid-template-columns: 250px 1fr; }
+    .layout.no-preview .preview-col { display: none; }
+    @media (max-width: 1100px) {
         .layout { grid-template-columns: 1fr; overflow-y: auto; }
+        .preview-col, .right-col { max-height: 70vh; }
+    }
+    /* every column is a raised panel for depth */
+    .col-panel {
+        background: var(--panel);
+        border: 1px solid var(--line-strong);
+        border-radius: 14px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 0;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, .30);
     }
 
     /* ========== LEFT COLUMN — DRAG & DROP ========== */
@@ -79,7 +95,7 @@
         border: 2px dashed var(--line-strong);
         border-radius: 14px;
         background: var(--panel-2);
-        padding: 44px 20px;
+        padding: 26px 14px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -104,13 +120,14 @@
     .dz-title { font-size: 14px; font-weight: 600; }
     .dz-hint { font-size: 12px; color: var(--muted); }
 
-    /* loaded file list (empty for now) */
+    /* loaded file list */
     .file-list {
         list-style: none;
         display: flex;
         flex-direction: column;
         gap: 6px;
         overflow-y: auto;
+        overscroll-behavior: contain;
         min-height: 0;
         flex: 1;
     }
@@ -122,6 +139,128 @@
         border-radius: 10px;
         background: var(--panel-2);
     }
+    .file-card {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 10px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--panel-2);
+        cursor: pointer;
+        transition: border-color .15s;
+    }
+    .file-card:hover { border-color: var(--accent); }
+    .file-card .fc-icon { font-size: 16px; flex-shrink: 0; }
+    .file-card .fc-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+    .file-card .fc-name { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-card .fc-meta { font-size: 11px; color: var(--muted); }
+    .clear-btn {
+        font-family: inherit;
+        font-size: 11px;
+        color: var(--muted);
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        width: 22px; height: 22px;
+        cursor: pointer;
+        flex-shrink: 0;
+        display: inline-flex; align-items: center; justify-content: center;
+    }
+    .clear-btn:hover { color: #fff; background: var(--accent-hover); border-color: var(--accent-hover); }
+
+    /* ========== CENTER COLUMN — DOCUMENT PREVIEW ========== */
+    .preview-empty {
+        margin: auto;
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+        padding: 20px;
+    }
+    .preview-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 8px;
+    }
+    .preview-head .preview-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .preview-head .preview-meta { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+    .preview-text {
+        flex: 1;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        font-size: 12.5px;
+        line-height: 1.65;
+        color: var(--ink);
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 12px 14px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
+    /* ========== CITATIONS — expandable accordions under AI answers ========== */
+    .citations, .rag-results { display: flex; flex-direction: column; gap: 6px; align-self: stretch; margin-top: -6px; }
+    .rag-header { font-size: 12px; color: var(--muted); }
+    details.citation-box {
+        border: 1px solid var(--line);
+        background: var(--panel-2);
+        border-radius: 10px;
+        font-size: 11.5px;
+        color: var(--muted);
+        overflow: hidden;
+    }
+    details.citation-box summary {
+        cursor: pointer;
+        padding: 7px 10px;
+        font-weight: 600;
+        list-style: none;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        user-select: none;
+    }
+    details.citation-box summary::-webkit-details-marker { display: none; }
+    details.citation-box summary::before { content: '▸'; transition: transform .15s; color: var(--accent); }
+    details.citation-box[open] summary::before { transform: rotate(90deg); }
+    details.citation-box .chunk-text {
+        padding: 8px 10px;
+        border-top: 1px solid var(--line);
+        line-height: 1.6;
+        color: var(--ink);
+        font-size: 12px;
+        white-space: pre-wrap;
+        max-height: 170px;
+        overflow-y: auto;
+    }
+    /* highlighted query terms inside citations (BM25 transparency) */
+    mark { background: #ffd54f; color: #101a2e; border-radius: 3px; padding: 0 2px; }
+
+    /* ========== CHAT OPTIONS (Search Only) & SIDEBAR TOP-K ========== */
+    .chat-options { display: flex; justify-content: flex-end; }
+    .mode-toggle {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 11.5px; color: var(--muted);
+        cursor: pointer; user-select: none;
+    }
+    .mode-toggle input { accent-color: var(--accent); cursor: pointer; }
+    .topk-row {
+        display: flex; justify-content: space-between; align-items: center;
+        font-size: 11.5px; color: var(--muted);
+    }
+    .topk-row select {
+        font-family: inherit; font-size: 11.5px;
+        color: var(--ink); background: var(--panel-2);
+        border: 1px solid var(--line-strong);
+        border-radius: 7px; padding: 3px 6px; cursor: pointer;
+    }
+    .input-bar button.stop { background: #dc2626; box-shadow: 0 2px 10px rgba(220, 38, 38, .35); }
+    .input-bar button.stop:hover { background: #b91c1c; }
 
     /* ========== RIGHT COLUMN — CHAT ========== */
     .right-col {
@@ -137,6 +276,7 @@
     .chat {
         flex: 1;
         overflow-y: auto;
+        overscroll-behavior: contain;   /* trackpad scroll stays inside the chat */
         display: flex;
         flex-direction: column;
         gap: 12px;
@@ -206,11 +346,16 @@
         background: var(--accent);
         border: none;
         border-radius: 12px;
-        padding: 12px 22px;
+        padding: 12px 20px;
         cursor: pointer;
-        transition: background .15s;
+        transition: background .15s, box-shadow .15s;
         flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        box-shadow: 0 2px 10px rgba(59, 130, 246, .30);
     }
+    .input-bar button .btn-icon { font-size: 14px; }
     .input-bar button:hover { background: var(--accent-hover); }
     .input-bar button:active { transform: translateY(1px); }
 
@@ -226,6 +371,7 @@
         display: inline-flex; align-items: center; justify-content: center;
     }
     .hdr-icon:hover { border-color: var(--accent); }
+    .hdr-icon.inactive { opacity: .45; }
 
     /* ========== UPLOAD STATES & FILE LIST ========== */
     .dropzone.drag { border-color: var(--accent); background: #101c36; }
@@ -249,14 +395,15 @@
             <span class="tagline">local file analysis</span>
         </div>
         <div class="header-controls">
+            <button class="hdr-icon" id="preview-toggle" title="Show document preview">📄</button>
             <button class="hdr-icon" id="settings-btn" title="Model settings">⚙️</button>
         </div>
     </header>
 
     <main class="layout">
 
-        <!-- ===== LEFT COLUMN: DRAG & DROP ===== -->
-        <section class="left-col">
+        <!-- ===== LEFT COLUMN: FILES ===== -->
+        <section class="left-col col-panel">
             <div class="col-title">Files</div>
             <div class="dropzone" id="dropzone">
                 <div class="dz-icon">⇪</div>
@@ -268,10 +415,31 @@
                 <li class="empty">No files loaded</li>
             </ul>
             <div class="status" id="status"></div>
+            <div class="topk-row">
+                <label for="topk-select">Fragments sent to AI</label>
+                <select id="topk-select">
+                    <option>1</option>
+                    <option>2</option>
+                    <option selected>3</option>
+                    <option>4</option>
+                    <option>5</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- ===== CENTER COLUMN: DOCUMENT PREVIEW ===== -->
+        <section class="preview-col col-panel">
+            <div class="col-title">Document preview</div>
+            <div class="preview-empty" id="preview-empty">Load a file to inspect the extracted text. Click a file on the left to switch preview.</div>
+            <div class="preview-head" id="preview-head" hidden>
+                <span class="preview-name" id="preview-name"></span>
+                <span class="preview-meta" id="preview-meta"></span>
+            </div>
+            <div class="preview-text" id="preview-text" hidden></div>
         </section>
 
         <!-- ===== RIGHT COLUMN: CHAT ===== -->
-        <section class="right-col">
+        <section class="right-col col-panel">
             <div class="chat" id="chat">
                 <div class="empty-chat">
                     <div class="title">LocalSift is ready</div>
@@ -279,9 +447,15 @@
                 </div>
                 <!-- messages (.msg.user / .msg.assistant) will appear here -->
             </div>
+            <div class="chat-options">
+                <label class="mode-toggle" title="Skip the AI: show the BM25 fragments directly — fast on slow PCs and great for exact-word search">
+                    <input type="checkbox" id="search-only">
+                    <span>Search Only (No AI)</span>
+                </label>
+            </div>
             <div class="input-bar">
                 <textarea id="prompt" rows="1" placeholder="Ask something about your files…"></textarea>
-                <button id="sift-btn" type="button">Sift</button>
+                <button id="sift-btn" type="button"><span class="btn-icon">🔍</span>Sift</button>
             </div>
         </section>
 
@@ -300,20 +474,73 @@
         const chatEl = document.getElementById('chat');
         const promptEl = document.getElementById('prompt');
         const siftBtn = document.getElementById('sift-btn');
+        const searchOnlyEl = document.getElementById('search-only');
+        const topkSelect = document.getElementById('topk-select');
 
         function setStatus(text) { statusEl.textContent = text || ''; }
         function getModelName() { return localStorage.getItem('localsift_model') || DEFAULT_MODEL; }
 
         // ===================== CHAT RENDERING =====================
         function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+        // Auto-scroll ONLY when the user is already near the bottom:
+        // never fights manual trackpad/mouse scrolling.
+        function autoScroll() {
+            const nearBottom = chatEl.scrollHeight - chatEl.scrollTop - chatEl.clientHeight < 80;
+            if (nearBottom) chatEl.scrollTop = chatEl.scrollHeight;
+        }
         function removeEmptyState() { const el = chatEl.querySelector('.empty-chat'); if (el) el.remove(); }
+        // source accordions under the AI answer: the exact BM25 chunks, with the
+        // query terms highlighted — full transparency of what the model saw
+        function highlightQuery(text, query) {
+            const qTokens = new Set(tokenize(query));
+            return text.split(/([\p{L}\p{N}]+)/u).map(part =>
+                qTokens.has(part.toLowerCase()) ? `<mark>${escapeHtml(part)}</mark>` : escapeHtml(part)
+            ).join('');
+        }
+        function fragmentDetails(f, query, open) {
+            return `<details class="citation-box"${open ? ' open' : ''}>
+                <summary>📄 Source: ${escapeHtml(f.doc)} — paragraph ${f.index + 1}</summary>
+                <div class="chunk-text">${highlightQuery(f.text, query)}</div>
+            </details>`;
+        }
+        function appendCitations(replyDiv, fragments, query) {
+            if (!fragments.length) return;
+            const cite = document.createElement('div');
+            cite.className = 'citations';
+            cite.innerHTML = fragments.map(f => fragmentDetails(f, query, false)).join('');
+            replyDiv.insertAdjacentElement('afterend', cite);
+        }
+        // Search Only mode: show the BM25 fragments directly, no LLM call
+        function renderSearchResults(query, fragments) {
+            const header = appendMessage('assistant', `BM25 search — top ${fragments.length} fragment${fragments.length === 1 ? '' : 's'} for “${query}” (no AI called):`);
+            header.classList.add('rag-header');
+            const wrap = document.createElement('div');
+            wrap.className = 'rag-results';
+            wrap.innerHTML = fragments.map(f => fragmentDetails(f, query, true)).join('');
+            chatEl.appendChild(wrap);
+            autoScroll();
+        }
+
+        // Top-K: how many fragments to send to the AI (persisted)
+        function getTopK() { return Number(topkSelect.value) || 3; }
+        topkSelect.value = localStorage.getItem('localsift_topk') || '3';
+        topkSelect.addEventListener('change', () => localStorage.setItem('localsift_topk', topkSelect.value));
+
+        // streaming state: turns the Sift button into a red Stop button
+        let streaming = false;
+        let streamAbort = null;
+        function setStreaming(on) {
+            streaming = on;
+            siftBtn.classList.toggle('stop', on);
+            siftBtn.innerHTML = on ? '<span class="btn-icon">⏹</span>Stop' : '<span class="btn-icon">🔍</span>Sift';
+        }
         function appendMessage(role, content) {
             const el = document.createElement('div');
             el.className = `msg ${role}`;
             el.innerHTML = escapeHtml(content);
             removeEmptyState();
             chatEl.appendChild(el);
-            chatEl.scrollTop = chatEl.scrollHeight;
+            autoScroll();
             return el;
         }
 
@@ -330,8 +557,10 @@
                 const res = await fetch('/upload', { method: 'POST', body: fd });
                 const data = await res.json();
                 if (!data.ok) { appendMessage('assistant', `⚠️ ${file.name}: ${data.error}`); setStatus(''); return; }
-                documents.push({ name: data.filename, text: data.text, paragraphs: splitParagraphs(data.text) });
+                const doc = { name: data.filename, size: data.size, text: data.text, paragraphs: splitParagraphs(data.text) };
+                documents.push(doc);
                 renderFileList();
+                showPreview(doc);
                 console.log(`[upload] ${data.filename}: ${data.chars} chars extracted`);
                 setStatus(`${data.filename}: ${data.chars} chars ready`);
             } catch (err) {
@@ -341,15 +570,52 @@
             }
         }
 
+        // file cards: icon + name + size + clear button; click a card to preview it
+        const FILE_ICONS = { pdf: '📕', docx: '📘', odt: '📗', txt: '📄', md: '📄', csv: '📄' };
+        function fileIcon(name) { return FILE_ICONS[name.split('.').pop().toLowerCase()] || '📄'; }
+        function formatSize(bytes) { return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`; }
+
         function renderFileList() {
             if (!documents.length) { fileListEl.innerHTML = '<li class="empty">No files loaded</li>'; return; }
             fileListEl.innerHTML = '';
-            for (const doc of documents) {
+            documents.forEach((doc, i) => {
                 const li = document.createElement('li');
-                li.className = 'file-item';
-                li.innerHTML = `<span class="fi-name">${escapeHtml(doc.name)}</span><span class="fi-meta">${doc.paragraphs.length} ¶</span>`;
+                li.className = 'file-card';
+                li.title = 'Click to preview this file';
+                li.innerHTML = `<span class="fc-icon">${fileIcon(doc.name)}</span>
+                    <span class="fc-info">
+                        <span class="fc-name">${escapeHtml(doc.name)}</span>
+                        <span class="fc-meta">${formatSize(doc.size || 0)} · ${doc.paragraphs.length} ¶</span>
+                    </span>
+                    <button class="clear-btn" data-i="${i}" title="Remove file">✕</button>`;
+                li.addEventListener('click', e => { if (!e.target.closest('.clear-btn')) showPreview(doc); });
                 fileListEl.appendChild(li);
-            }
+            });
+            fileListEl.querySelectorAll('.clear-btn').forEach(btn => btn.addEventListener('click', e => {
+                e.stopPropagation();
+                const i = Number(btn.dataset.i);
+                const removed = documents.splice(i, 1)[0];
+                if (previewDoc === removed) clearPreview();
+                renderFileList();
+            }));
+        }
+
+        // document preview: first 500 characters of the extracted text
+        let previewDoc = null;
+        function showPreview(doc) {
+            previewDoc = doc;
+            document.getElementById('preview-empty').hidden = true;
+            document.getElementById('preview-head').hidden = false;
+            document.getElementById('preview-text').hidden = false;
+            document.getElementById('preview-name').textContent = doc.name;
+            document.getElementById('preview-meta').textContent = `${doc.text.length.toLocaleString()} chars`;
+            document.getElementById('preview-text').textContent = doc.text.slice(0, 500) + (doc.text.length > 500 ? '…' : '');
+        }
+        function clearPreview() {
+            previewDoc = null;
+            document.getElementById('preview-empty').hidden = false;
+            document.getElementById('preview-head').hidden = true;
+            document.getElementById('preview-text').hidden = true;
         }
 
         // drag & drop + click-to-browse
@@ -395,7 +661,7 @@
 
         // ===================== RAG PROMPT =====================
         function buildRagMessages(query) {
-            const fragments = bm25TopFragments(query, 3);
+            const fragments = bm25TopFragments(query, getTopK());
             const fragmentsText = fragments.length
                 ? fragments.map((f, i) => `[Fragment ${i + 1} — ${f.doc}, paragraph ${f.index + 1}]\n${f.text}`).join('\n\n')
                 : '(no fragments available)';
@@ -422,34 +688,43 @@
             return { type: 'none', url: null };
         }
 
-        // SSE streaming: tokens appear as they are generated
-        async function chatStream(messages, msgDiv) {
+        // SSE streaming: tokens appear as they are generated; supports abort
+        async function chatStream(messages, msgDiv, signal) {
             const payload = { model: getModelName(), messages, stream: true };
             if (BACKEND.type === 'koboldcpp') { payload.max_tokens = 512; payload.temperature = 0.3; }
             const response = await fetch(BACKEND.url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                signal
             });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let reply = '', buffer = '';
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-                buffer = lines.pop();
-                for (const line of lines) {
-                    const s = line.trim();
-                    if (!s.startsWith('data:')) continue;
-                    const item = s.slice(5).trim();
-                    if (!item || item === '[DONE]') continue;
-                    try { const delta = JSON.parse(item).choices?.[0]?.delta?.content; if (delta) reply += delta; } catch (e) { /* incomplete SSE chunk: skip */ }
-                }
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop();
+                    for (const line of lines) {
+                        const s = line.trim();
+                        if (!s.startsWith('data:')) continue;
+                        const item = s.slice(5).trim();
+                        if (!item || item === '[DONE]') continue;
+                        try { const delta = JSON.parse(item).choices?.[0]?.delta?.content; if (delta) reply += delta; } catch (e) { /* incomplete SSE chunk: skip */ }
+                    }
                 msgDiv.innerHTML = escapeHtml(reply) + '<span class="typing-cursor">▌</span>';
-                chatEl.scrollTop = chatEl.scrollHeight;
+                autoScroll();
+                }
+            } catch (e) {
+                if (e.name === 'AbortError') {  // user pressed Stop: keep the partial reply
+                    msgDiv.innerHTML = escapeHtml(reply) || '⏹ Generation stopped.';
+                    return reply;
+                }
+                throw e;
             }
             msgDiv.innerHTML = escapeHtml(reply);
             return reply;
@@ -458,7 +733,7 @@
         // ===================== SEND =====================
         async function sendQuery() {
             const query = promptEl.value.trim();
-            if (!query || siftBtn.disabled) return;
+            if (!query || streaming) return;
             promptEl.value = '';
             appendMessage('user', query);
             if (!documents.length) {
@@ -467,24 +742,35 @@
             }
             const { messages, fragments } = buildRagMessages(query);
             console.log('[rag] top fragments:', fragments.map(f => `${f.doc} ¶${f.index + 1} (score ${f.score.toFixed(2)})`).join(' | '));
-            siftBtn.disabled = true;
+
+            // Search Only: skip the LLM entirely and show the BM25 fragments
+            if (searchOnlyEl.checked) { renderSearchResults(query, fragments); return; }
+
+            setStreaming(true);
             setStatus(`Asking ${getModelName()} (${BACKEND.type})…`);
             const replyDiv = appendMessage('assistant', '');
             try {
                 if (!BACKEND.url) { const b = await detectBackend(); if (b.url) BACKEND = b; }
                 if (!BACKEND.url) throw new Error('No AI backend found (Ollama on port 11434 or KoboldCpp on port 5001)');
-                await chatStream(messages, replyDiv);
+                streamAbort = new AbortController();
+                await chatStream(messages, replyDiv, streamAbort.signal);
+                appendCitations(replyDiv, fragments, query);
                 setStatus('');
             } catch (err) {
                 console.error('[chat] failed:', err);
                 replyDiv.innerHTML = escapeHtml(`⚠️ ${err.message}`);
                 setStatus('backend error');
             } finally {
-                siftBtn.disabled = false;
+                streamAbort = null;
+                setStreaming(false);
                 promptEl.focus();
             }
         }
-        siftBtn.addEventListener('click', sendQuery);
+        // while streaming the button acts as Stop (abort), otherwise as Sift (send)
+        siftBtn.addEventListener('click', () => {
+            if (streaming) { if (streamAbort) streamAbort.abort(); return; }
+            sendQuery();
+        });
         promptEl.addEventListener('keydown', e => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendQuery(); }
         });
@@ -497,6 +783,23 @@
                 localStorage.setItem('localsift_model', clean);
                 alert('Model set to: ' + clean);
             }
+        });
+
+        // ===================== PREVIEW TOGGLE =====================
+        // The document preview is optional: hidden by default so the chat and
+        // its citations stay the focus. One click brings it back (choice saved).
+        const previewToggle = document.getElementById('preview-toggle');
+        const layoutEl = document.querySelector('.layout');
+        function applyPreview(visible) {
+            layoutEl.classList.toggle('no-preview', !visible);
+            previewToggle.classList.toggle('inactive', !visible);
+            previewToggle.title = visible ? 'Hide document preview' : 'Show document preview';
+        }
+        applyPreview(localStorage.getItem('localsift_preview') === '1');
+        previewToggle.addEventListener('click', () => {
+            const visible = !layoutEl.classList.contains('no-preview');
+            applyPreview(!visible);
+            localStorage.setItem('localsift_preview', visible ? '0' : '1');
         });
 
         // ===================== INIT =====================
