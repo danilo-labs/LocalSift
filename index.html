@@ -238,6 +238,9 @@
         max-height: 170px;
         overflow-y: auto;
     }
+    /* grouped sources: ranked fragments inside one accordion */
+    details.sources-group .frag-item { padding: 0 2px; }
+    .frag-meta { font-size: 11px; font-weight: 600; color: var(--muted); padding: 6px 10px 2px; }
     /* highlighted query terms inside citations (BM25 transparency) */
     mark { background: #ffd54f; color: #101a2e; border-radius: 3px; padding: 0 2px; }
 
@@ -497,17 +500,24 @@
                 qTokens.has(part.toLowerCase()) ? `<mark>${escapeHtml(part)}</mark>` : escapeHtml(part)
             ).join('');
         }
-        function fragmentDetails(f, query, open) {
-            return `<details class="citation-box"${open ? ' open' : ''}>
-                <summary>📄 Source: ${escapeHtml(f.doc)} — paragraph ${f.index + 1}</summary>
-                <div class="chunk-text">${highlightQuery(f.text, query)}</div>
+        // One grouped accordion per answer: all fragments ranked by BM25 score,
+        // each showing file, paragraph, score and the highlighted chunk
+        function sourcesGroup(query, fragments, open) {
+            const items = fragments.map((f, i) => `
+                <div class="frag-item">
+                    <div class="frag-meta">#${i + 1} ${escapeHtml(f.doc)} — Paragraph ${f.index + 1} — Score: ${f.score.toFixed(1)}</div>
+                    <div class="chunk-text">${highlightQuery(f.text, query)}</div>
+                </div>`).join('');
+            return `<details class="citation-box sources-group"${open ? ' open' : ''}>
+                <summary>📄 ${fragments.length} source${fragments.length === 1 ? '' : 's'} used (click to expand)</summary>
+                ${items}
             </details>`;
         }
         function appendCitations(replyDiv, fragments, query) {
             if (!fragments.length) return;
             const cite = document.createElement('div');
             cite.className = 'citations';
-            cite.innerHTML = fragments.map(f => fragmentDetails(f, query, false)).join('');
+            cite.innerHTML = sourcesGroup(query, fragments, false);
             replyDiv.insertAdjacentElement('afterend', cite);
         }
         // Search Only mode: show the BM25 fragments directly, no LLM call
@@ -516,7 +526,7 @@
             header.classList.add('rag-header');
             const wrap = document.createElement('div');
             wrap.className = 'rag-results';
-            wrap.innerHTML = fragments.map(f => fragmentDetails(f, query, true)).join('');
+            wrap.innerHTML = sourcesGroup(query, fragments, true);
             chatEl.appendChild(wrap);
             autoScroll();
         }
